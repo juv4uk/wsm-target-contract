@@ -16,6 +16,12 @@ pub const TAG_BITS: u8 = 3;
 pub const TAG_MASK: Word = (1 << TAG_BITS) - 1;
 pub const PAYLOAD_BITS: u8 = WORD_BITS - TAG_BITS;
 
+/// Byte-exact WSM projection of this crate's ABI constants.
+///
+/// Consumers that need to record the contract in evidence should use this
+/// value rather than carrying a second editable `target-contract.wsm` copy.
+pub const CONTRACT_PROJECTION: &str = include_str!("../../target-contract.wsm");
+
 pub type Word = u64;
 
 /// Bounded closure descriptor owned by the active runtime closure arena.
@@ -405,7 +411,7 @@ mod tests {
 
     #[test]
     fn committed_wsm_projection_is_current() {
-        assert_eq!(include_str!("../../target-contract.wsm"), render_contract());
+        assert_eq!(CONTRACT_PROJECTION, render_contract());
     }
 
     fn render_contract() -> String {
