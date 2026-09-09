@@ -108,13 +108,6 @@ pub enum ErrorCode {
     NumericOverflow = 5,
 }
 
-pub const MY_LISP_CONTRACT: &str = "3.0";
-pub const MY_LISP_SHA: &str = "667b587394dc8d3fc8dadff7c925e5bce68ed887";
-pub const CML_CLAIMED_CONTRACT: &str = "2.0";
-pub const CML_SHA: &str = "7adfd0b8ae7bbc092af861c80b3cea433e2eba58";
-pub const FIRST_FIXTURE_SOURCE: &str = "(cons (quote A) (quote B))";
-pub const FIRST_FIXTURE_EXPECTED: &str = "(A . B)";
-
 /// Encode a signed 61-bit fixnum. Values outside the target ABI fail closed.
 pub const fn encode_fixnum(value: i64) -> Option<Word> {
     if value < FIXNUM_MIN || value > FIXNUM_MAX {
@@ -434,8 +427,8 @@ mod tests {
  (runtime-imports . (wsm_cons wsm_car wsm_cdr wsm_eq wsm_atom wsm_closure_new wsm_closure_definition wsm_closure_environment wsm_pci_config_capability wsm_pci_config_read16 wsm_fail))\n\
  (errors . ((out-of-memory . {}) (type . {}) (invalid-symbol . {}) (abi-violation . {})))\n\
  (truth . ((false-value . nil) (fixnum-zero . true)))\n\
- (authority . ((my-lisp-contract . \"{MY_LISP_CONTRACT}\") (my-lisp-sha . \"{MY_LISP_SHA}\") (cml-claimed-contract . \"{CML_CLAIMED_CONTRACT}\") (cml-sha . \"{CML_SHA}\")))\n\
- (first-fixture . ((source . \"{FIRST_FIXTURE_SOURCE}\") (expected . \"{FIRST_FIXTURE_EXPECTED}\"))))\n",
+ (target-scope . ((semantics . external-my-lisp-contract) (compiler-provenance . consumer-evidence) (runtime-provenance . consumer-evidence)))\n\
+)\n",
             Tag::Cons as u8,
             Tag::Nil as u8,
             Tag::True as u8,
