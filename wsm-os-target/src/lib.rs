@@ -7,7 +7,7 @@
 //! `my_lisp::layout::NanBox`.
 
 pub const CONTRACT_SCHEMA: &str = "wsm-os-target-v1";
-pub const CONTRACT_VERSION: u16 = 2;
+pub const CONTRACT_VERSION: u16 = 3;
 pub const ARCHITECTURE: &str = "x86_64";
 pub const ENDIANNESS: &str = "little";
 pub const WORD_BITS: u8 = 64;
@@ -53,6 +53,12 @@ pub enum Tag {
     Symbol = 4,
     Closure = 5,
     Capability = 6,
+    /// Opaque handle into a runtime-owned, session-local boxed-value table.
+    /// The tagged word carries only a non-zero handle id; the concrete kind
+    /// (String today, Vector/NumericBuffer later) is a discriminant stored
+    /// *inside* the boxed object the handle refers to, not in these bits.
+    /// This is the last tag value the current 3-bit tag space has free.
+    Boxed = 7,
 }
 
 pub const NIL: Word = Tag::Nil as Word;
@@ -61,6 +67,7 @@ pub const FIXNUM_MIN: i64 = -(1_i64 << (PAYLOAD_BITS - 1));
 pub const FIXNUM_MAX: i64 = (1_i64 << (PAYLOAD_BITS - 1)) - 1;
 pub const SYMBOL_ID_MAX: Word = (1_u64 << PAYLOAD_BITS) - 1;
 pub const CAPABILITY_ID_MAX: Word = (1_u64 << PAYLOAD_BITS) - 1;
+pub const BOXED_HANDLE_MAX: Word = (1_u64 << PAYLOAD_BITS) - 1;
 
 /// Canonical `t` represented as Symbol(SYMBOL_ID_MAX) sentinel.
 pub const CANONICAL_T: Word = (SYMBOL_ID_MAX << TAG_BITS) | Tag::Symbol as Word;
@@ -253,6 +260,32 @@ pub const fn decode_capability_descriptor(word: Word) -> Option<CapabilityDescri
     }
 }
 
+/// Encode a non-zero, runtime-owned boxed-value handle. The handle is
+/// **session-local**, not image-local like `Symbol`/`Closure`: it indexes a
+/// runtime table (e.g. an append-only, non-interning string/vector arena)
+/// that is created fresh per host session and does not survive across
+/// sessions or processes. The concrete boxed kind (String today) is a
+/// discriminant carried by the table entry itself, not by this word.
+#[inline(always)]
+pub const fn encode_boxed(handle: Word) -> Option<Word> {
+    if handle == 0 || handle > BOXED_HANDLE_MAX {
+        None
+    } else {
+        Some((handle << TAG_BITS) | Tag::Boxed as Word)
+    }
+}
+
+#[inline(always)]
+pub const fn decode_boxed(word: Word) -> Option<Word> {
+    if tag(word) == Tag::Boxed as Word {
+        let handle = word >> TAG_BITS;
+        if handle != 0 {
+            return Some(handle);
+        }
+    }
+    None
+}
+
 pub const fn tag(word: Word) -> Word {
     word & TAG_MASK
 }
@@ -384,6 +417,21 @@ mod tests {
     }
 
     #[test]
+    fn boxed_handles_are_distinct_non_zero_session_local_ids() {
+        assert_eq!(encode_boxed(0), None);
+        let boxed = encode_boxed(1).unwrap();
+        assert_eq!(decode_boxed(boxed), Some(1));
+        assert_eq!(decode_fixnum(boxed), None);
+        assert_eq!(decode_symbol(boxed), None);
+        assert_eq!(decode_capability(boxed), None);
+        assert_eq!(decode_boxed(TRUE), None);
+        assert_eq!(
+            decode_boxed(encode_boxed(BOXED_HANDLE_MAX).unwrap()),
+            Some(BOXED_HANDLE_MAX)
+        );
+    }
+
+    #[test]
     fn tag_values_are_unique_and_fit_mask() {
         let tags = [
             Tag::Cons,
@@ -393,6 +441,7 @@ mod tests {
             Tag::Symbol,
             Tag::Closure,
             Tag::Capability,
+            Tag::Boxed,
         ];
         for (index, left) in tags.iter().enumerate() {
             assert!((*left as Word) <= TAG_MASK);
@@ -416,10 +465,11 @@ mod tests {
  (architecture . {ARCHITECTURE})\n\
  (endianness . {ENDIANNESS})\n\
  (word . ((bits . {WORD_BITS}) (pointer-bits . {POINTER_BITS}) (tag-bits . {TAG_BITS}) (tag-mask . {TAG_MASK}) (payload-bits . {PAYLOAD_BITS})))\n\
- (tags . ((cons . {}) (nil . {}) (true . {}) (fixnum . {}) (symbol . {}) (closure . {}) (capability . {})))\n\
+ (tags . ((cons . {}) (nil . {}) (true . {}) (fixnum . {}) (symbol . {}) (closure . {}) (capability . {}) (boxed . {})))\n\
  (immediates . ((nil . {NIL}) (true . {TRUE})))\n\
  (fixnum . ((minimum . {FIXNUM_MIN}) (maximum . {FIXNUM_MAX}) (encoding . signed-shift-left-3-or-tag)))\n\
  (symbol . ((minimum-id . 1) (maximum-id . {SYMBOL_ID_MAX}) (scope . image-local-interned)))\n\
+ (boxed . ((minimum-handle . 1) (maximum-handle . {BOXED_HANDLE_MAX}) (scope . session-local-runtime-table) (discriminant-location . inside-boxed-object) (kinds-defined-so-far . (string)) (forgeable-by-wsm . false) (ownership . runtime-owned-table) (tag-space-remaining . 0)))\n\
  (cons . ((bytes . {CONS_BYTES}) (alignment . {CONS_ALIGNMENT}) (car-offset . {CONS_CAR_OFFSET}) (cdr-offset . {CONS_CDR_OFFSET}) (zero-pointer . invalid) (ownership . bounded-runtime-heap)))\n\
  (closure . ((bytes . {CLOSURE_BYTES}) (alignment . {CLOSURE_ALIGNMENT}) (definition-id-offset . {CLOSURE_DEFINITION_ID_OFFSET}) (environment-ref-offset . {CLOSURE_ENVIRONMENT_REF_OFFSET}) (definition-scope . image-local) (ownership . bounded-runtime-closure-arena)))\n\
  (capability . ((minimum-id . 1) (maximum-id . {CAPABILITY_ID_MAX}) (scope . boot-provisioned) (forgeable-by-wsm . false) (privileged-use . runtime-validated)))\n\
@@ -436,6 +486,7 @@ mod tests {
             Tag::Symbol as u8,
             Tag::Closure as u8,
             Tag::Capability as u8,
+            Tag::Boxed as u8,
             ErrorCode::OutOfMemory as u32,
             ErrorCode::Type as u32,
             ErrorCode::InvalidSymbol as u32,
