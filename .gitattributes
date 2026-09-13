@@ -1,2 +1,11 @@
 * text=auto
+target-contract.lisp text eol=lf
 target-contract.wsm text eol=lf
+
+# Canonical source extension: .lisp
+*.lisp linguist-language=Common-Lisp linguist-detectable=true -linguist-vendored -linguist-generated -linguist-documentation
+*.wsm linguist-language=Common-Lisp linguist-detectable=true -linguist-vendored -linguist-generated -linguist-documentation
+*.my linguist-language=Common-Lisp linguist-detectable=true -linguist-vendored -linguist-generated -linguist-documentation
+*.всм linguist-language=Common-Lisp linguist-detectable=true -linguist-vendored -linguist-generated -linguist-documentation
+*.мій linguist-language=Common-Lisp linguist-detectable=true -linguist-vendored -linguist-generated -linguist-documentation
+*.лісп linguist-language=Common-Lisp linguist-detectable=true -linguist-vendored -linguist-generated -linguist-documentation

@@ -20,7 +20,7 @@ pub const PAYLOAD_BITS: u8 = WORD_BITS - TAG_BITS;
 ///
 /// Consumers that need to record the contract in evidence should use this
 /// value rather than carrying a second editable `target-contract.wsm` copy.
-pub const CONTRACT_PROJECTION: &str = include_str!("../../target-contract.wsm");
+pub const CONTRACT_PROJECTION: &str = include_str!("../../target-contract.lisp");
 
 pub type Word = u64;
 
