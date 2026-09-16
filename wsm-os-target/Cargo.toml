@@ -4,5 +4,6 @@ version = "0.1.0"
 edition = "2024"
 description = "Machine-readable x86_64 target ABI contract for wsm-os"
 publish = false
+license-file = "../LICENSE"
 
 [dependencies]
