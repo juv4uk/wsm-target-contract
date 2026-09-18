@@ -1,6 +1,6 @@
 use wsm_os_target::{Tag, decode_boxed, encode_boxed};
 
-const CONTRACT: &str = include_str!("../../target-contract.wsm");
+const CONTRACT: &str = include_str!("../../target-contract.lisp");
 
 #[test]
 fn rational_is_ratified_as_an_existing_boxed_kind_without_new_wire_tag() {
