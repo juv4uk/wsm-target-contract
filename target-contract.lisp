@@ -15,7 +15,7 @@
 (capability . ((minimum-id . 1) (maximum-id . 2305843009213693951) (scope . boot-provisioned) (forgeable-by-wsm . false) (privileged-use . runtime-validated)))
 (calling-convention . ((name . sysv-amd64-integer) (entry . wsm_entry) (context-register . rdi) (result-register . rax) (stack-alignment-before-call . 16) (red-zone . forbidden)))
 (runtime-imports . (wsm_cons wsm_car wsm_cdr wsm_eq wsm_atom wsm_closure_new wsm_closure_definition wsm_closure_environment wsm_pci_config_capability wsm_pci_config_read16 wsm_mmio_capability wsm_mmio_read32 wsm_mmio_write32 wsm_rational_new wsm_rational_numerator wsm_rational_denominator wsm_fail))
-(errors . ((out-of-memory . 1) (type . 2) (invalid-symbol . 3) (abi-violation . 4)))
+(errors . ((out-of-memory . 1) (type . 2) (invalid-symbol . 3) (abi-violation . 4) (numeric-overflow . 5)))
 (truth . ((false-value . nil) (fixnum-zero . true)))
 (target-scope . ((semantics . external-my-lisp-contract) (compiler-provenance . consumer-evidence) (runtime-provenance . consumer-evidence)))
 )

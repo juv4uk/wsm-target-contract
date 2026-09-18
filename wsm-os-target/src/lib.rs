@@ -469,6 +469,24 @@ mod tests {
         assert_eq!(CONTRACT_PROJECTION, render_contract());
     }
 
+    #[test]
+    fn error_projection_covers_every_ratified_error_code() {
+        let projection = render_contract();
+        for (name, code) in [
+            ("out-of-memory", ErrorCode::OutOfMemory),
+            ("type", ErrorCode::Type),
+            ("invalid-symbol", ErrorCode::InvalidSymbol),
+            ("abi-violation", ErrorCode::AbiViolation),
+            ("numeric-overflow", ErrorCode::NumericOverflow),
+        ] {
+            let expected = format!("({name} . {})", code as u32);
+            assert!(
+                projection.contains(&expected),
+                "target projection omitted ratified error code: {expected}"
+            );
+        }
+    }
+
     fn render_contract() -> String {
         let runtime_imports = RUNTIME_IMPORTS.join(" ");
         format!(
@@ -489,7 +507,7 @@ mod tests {
  (capability . ((minimum-id . 1) (maximum-id . {CAPABILITY_ID_MAX}) (scope . boot-provisioned) (forgeable-by-wsm . false) (privileged-use . runtime-validated)))\n\
  (calling-convention . ((name . {CALLING_CONVENTION}) (entry . {ENTRY_SYMBOL}) (context-register . {ENTRY_CONTEXT_REGISTER}) (result-register . {RESULT_REGISTER}) (stack-alignment-before-call . {STACK_ALIGNMENT_BEFORE_CALL}) (red-zone . forbidden)))\n\
  (runtime-imports . ({runtime_imports}))\n\
- (errors . ((out-of-memory . {}) (type . {}) (invalid-symbol . {}) (abi-violation . {})))\n\
+ (errors . ((out-of-memory . {}) (type . {}) (invalid-symbol . {}) (abi-violation . {}) (numeric-overflow . {})))\n\
  (truth . ((false-value . nil) (fixnum-zero . true)))\n\
  (target-scope . ((semantics . external-my-lisp-contract) (compiler-provenance . consumer-evidence) (runtime-provenance . consumer-evidence)))\n\
 )\n",
@@ -505,6 +523,7 @@ mod tests {
             ErrorCode::Type as u32,
             ErrorCode::InvalidSymbol as u32,
             ErrorCode::AbiViolation as u32,
+            ErrorCode::NumericOverflow as u32,
         )
     }
 }
