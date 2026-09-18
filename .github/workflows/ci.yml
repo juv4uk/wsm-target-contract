@@ -10,6 +10,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - name: Verify pinned semantic operation authority
+        run: bash scripts/check-operation-authority.sh
       - name: cargo fmt
         run: cargo fmt --all -- --check
       - name: cargo test
