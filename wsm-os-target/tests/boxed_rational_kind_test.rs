@@ -1,4 +1,4 @@
-use wsm_os_target::{decode_boxed, encode_boxed, Tag};
+use wsm_os_target::{Tag, decode_boxed, encode_boxed};
 
 const CONTRACT: &str = include_str!("../../target-contract.wsm");
 
