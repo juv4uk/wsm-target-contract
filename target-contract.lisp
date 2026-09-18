@@ -1,7 +1,7 @@
 ; generated projection of crates/wsm-os-target; do not edit numeric values by hand
 ((kind . wsm-os-target-contract)
 (schema . "wsm-os-target-v1")
-(version . 4)
+(version . 5)
 (architecture . x86_64)
 (endianness . little)
 (word . ((bits . 64) (pointer-bits . 64) (tag-bits . 3) (tag-mask . 7) (payload-bits . 61)))
@@ -9,7 +9,7 @@
 (immediates . ((nil . 1) (true . 2)))
 (fixnum . ((minimum . -1152921504606846976) (maximum . 1152921504606846975) (encoding . signed-shift-left-3-or-tag)))
 (symbol . ((minimum-id . 1) (maximum-id . 2305843009213693951) (scope . image-local-interned)))
-(boxed . ((minimum-handle . 1) (maximum-handle . 2305843009213693951) (scope . session-local-runtime-table) (discriminant-location . inside-boxed-object) (kinds-defined-so-far . (string game-handle)) (forgeable-by-wsm . false) (ownership . runtime-owned-table) (tag-space-remaining . 0)))
+(boxed . ((minimum-handle . 1) (maximum-handle . 2305843009213693951) (scope . session-local-runtime-table) (discriminant-location . inside-boxed-object) (kinds-defined-so-far . (string game-handle rational)) (forgeable-by-wsm . false) (ownership . runtime-owned-table) (tag-space-remaining . 0)))
 (cons . ((bytes . 16) (alignment . 16) (car-offset . 0) (cdr-offset . 8) (zero-pointer . invalid) (ownership . bounded-runtime-heap)))
 (closure . ((bytes . 16) (alignment . 16) (definition-id-offset . 0) (environment-ref-offset . 8) (definition-scope . image-local) (ownership . bounded-runtime-closure-arena)))
 (capability . ((minimum-id . 1) (maximum-id . 2305843009213693951) (scope . boot-provisioned) (forgeable-by-wsm . false) (privileged-use . runtime-validated)))
