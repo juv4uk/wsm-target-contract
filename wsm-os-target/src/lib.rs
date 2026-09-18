@@ -7,7 +7,7 @@
 //! `my_lisp::layout::NanBox`.
 
 pub const CONTRACT_SCHEMA: &str = "wsm-os-target-v1";
-pub const CONTRACT_VERSION: u16 = 5;
+pub const CONTRACT_VERSION: u16 = 6;
 pub const ARCHITECTURE: &str = "x86_64";
 pub const ENDIANNESS: &str = "little";
 pub const WORD_BITS: u8 = 64;
@@ -112,6 +112,9 @@ pub const RUNTIME_IMPORTS: &[&str] = &[
     "wsm_mmio_capability",
     "wsm_mmio_read32",
     "wsm_mmio_write32",
+    "wsm_rational_new",
+    "wsm_rational_numerator",
+    "wsm_rational_denominator",
     "wsm_fail",
 ];
 
@@ -467,6 +470,7 @@ mod tests {
     }
 
     fn render_contract() -> String {
+        let runtime_imports = RUNTIME_IMPORTS.join(" ");
         format!(
             "; generated projection of crates/wsm-os-target; do not edit numeric values by hand\n\
 ((kind . wsm-os-target-contract)\n\
@@ -484,7 +488,7 @@ mod tests {
  (closure . ((bytes . {CLOSURE_BYTES}) (alignment . {CLOSURE_ALIGNMENT}) (definition-id-offset . {CLOSURE_DEFINITION_ID_OFFSET}) (environment-ref-offset . {CLOSURE_ENVIRONMENT_REF_OFFSET}) (definition-scope . image-local) (ownership . bounded-runtime-closure-arena)))\n\
  (capability . ((minimum-id . 1) (maximum-id . {CAPABILITY_ID_MAX}) (scope . boot-provisioned) (forgeable-by-wsm . false) (privileged-use . runtime-validated)))\n\
  (calling-convention . ((name . {CALLING_CONVENTION}) (entry . {ENTRY_SYMBOL}) (context-register . {ENTRY_CONTEXT_REGISTER}) (result-register . {RESULT_REGISTER}) (stack-alignment-before-call . {STACK_ALIGNMENT_BEFORE_CALL}) (red-zone . forbidden)))\n\
- (runtime-imports . (wsm_cons wsm_car wsm_cdr wsm_eq wsm_atom wsm_closure_new wsm_closure_definition wsm_closure_environment wsm_pci_config_capability wsm_pci_config_read16 wsm_fail))\n\
+ (runtime-imports . ({runtime_imports}))\n\
  (errors . ((out-of-memory . {}) (type . {}) (invalid-symbol . {}) (abi-violation . {})))\n\
  (truth . ((false-value . nil) (fixnum-zero . true)))\n\
  (target-scope . ((semantics . external-my-lisp-contract) (compiler-provenance . consumer-evidence) (runtime-provenance . consumer-evidence)))\n\
