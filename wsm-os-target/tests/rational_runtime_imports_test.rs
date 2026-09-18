@@ -13,7 +13,15 @@ fn rational_runtime_imports_are_ratified_without_changing_boxed_wire_shape() {
         );
     }
 
-    assert_eq!(Tag::Boxed as u8, 7, "#12 must not allocate a new Rational tag");
+    assert_eq!(
+        Tag::Boxed as u8,
+        7,
+        "#12 must not allocate a new Rational tag"
+    );
     let word = encode_boxed(1).expect("existing Boxed handle 1 must remain valid");
-    assert_eq!(decode_boxed(word), Some(1), "#12 must preserve Boxed wire encoding");
+    assert_eq!(
+        decode_boxed(word),
+        Some(1),
+        "#12 must preserve Boxed wire encoding"
+    );
 }
