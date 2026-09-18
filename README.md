@@ -21,7 +21,7 @@ alignment, the x86_64 calling ABI, and allowed runtime imports.
 
 - `wsm-os-target/` — Rust `no_std` package `wsm-os-target`; числове джерело
   істини і перевірки його меж.
-- `target-contract.wsm` — згенерована WSM-проєкція тих самих чисел. Її не
+- `target-contract.lisp` — згенерована Lisp-readable WSM-проєкція тих самих чисел. Її не
   редагують вручну; тест пакета вимагає байт-точної відповідності.
 
 ## Межі авторитету / Authority boundaries
