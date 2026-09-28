@@ -150,6 +150,8 @@ pub const RUNTIME_IMPORTS: &[&str] = &[
     "wsm_rational_new",
     "wsm_rational_numerator",
     "wsm_rational_denominator",
+    "wsm_sid8_new",
+    "wsm_sid8_bits",
     "wsm_fail",
 ];
 
