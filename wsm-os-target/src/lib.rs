@@ -7,7 +7,7 @@
 //! `my_lisp::layout::NanBox`.
 
 pub const CONTRACT_SCHEMA: &str = "wsm-os-target-v1";
-pub const CONTRACT_VERSION: u16 = 6;
+pub const CONTRACT_VERSION: u16 = 7;
 pub const ARCHITECTURE: &str = "x86_64";
 pub const ENDIANNESS: &str = "little";
 pub const WORD_BITS: u8 = 64;
@@ -78,6 +78,40 @@ pub const FIXNUM_MAX: i64 = (1_i64 << (PAYLOAD_BITS - 1)) - 1;
 pub const SYMBOL_ID_MAX: Word = (1_u64 << PAYLOAD_BITS) - 1;
 pub const CAPABILITY_ID_MAX: Word = (1_u64 << PAYLOAD_BITS) - 1;
 pub const BOXED_HANDLE_MAX: Word = (1_u64 << PAYLOAD_BITS) - 1;
+pub const SID8_BITS: u8 = 8;
+
+#[repr(u8)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BoxedKind {
+    String = 1,
+    GameHandle = 2,
+    Rational = 3,
+    /// Exact resolved function identity. The payload is the original u8;
+    /// surface names and numeric aliases are not part of this representation.
+    Sid8 = 4,
+}
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct BoxedSid8 {
+    pub kind: BoxedKind,
+    pub bits: u8,
+}
+
+impl BoxedSid8 {
+    #[inline(always)]
+    pub const fn new(bits: u8) -> Self {
+        Self {
+            kind: BoxedKind::Sid8,
+            bits,
+        }
+    }
+
+    #[inline(always)]
+    pub const fn exact_bits(self) -> u8 {
+        self.bits
+    }
+}
 
 /// Canonical `t` represented as Symbol(SYMBOL_ID_MAX) sentinel.
 pub const CANONICAL_T: Word = (SYMBOL_ID_MAX << TAG_BITS) | Tag::Symbol as Word;
@@ -430,6 +464,17 @@ mod tests {
     }
 
     #[test]
+    fn sid8_boxed_payload_preserves_all_256_exact_identities() {
+        for raw in 0_u16..=255 {
+            let bits = raw as u8;
+            let value = BoxedSid8::new(bits);
+            assert_eq!(value.kind, BoxedKind::Sid8);
+            assert_eq!(value.exact_bits(), bits);
+        }
+        assert_eq!(core::mem::size_of::<BoxedSid8>(), 2);
+    }
+
+    #[test]
     fn boxed_handles_are_distinct_non_zero_session_local_ids() {
         assert_eq!(encode_boxed(0), None);
         let boxed = encode_boxed(1).unwrap();
@@ -519,6 +564,7 @@ mod tests {
             Tag::Closure as u8,
             Tag::Capability as u8,
             Tag::Boxed as u8,
+            BoxedKind::Sid8 as u8,
             ErrorCode::OutOfMemory as u32,
             ErrorCode::Type as u32,
             ErrorCode::InvalidSymbol as u32,
