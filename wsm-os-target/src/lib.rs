@@ -56,7 +56,8 @@ pub enum Tag {
     /// Opaque handle into a runtime-owned, session-local boxed-value table.
     /// The tagged word carries only a non-zero handle id; the concrete kind
     /// (String; an opaque game-engine object reference ratified in issue #2;
-    /// and an exact Rational value ratified in issue #11) is a discriminant
+    /// an exact Rational value ratified in issue #11; and an exact SID8
+    /// bootstrap transport value ratified in issue #28) is a discriminant
     /// stored *inside* the boxed object the handle refers to, not in these
     /// bits. Vector/NumericBuffer remain reserved for later.
     ///
@@ -546,7 +547,8 @@ mod tests {
  (immediates . ((nil . {NIL}) (true . {TRUE})))\n\
  (fixnum . ((minimum . {FIXNUM_MIN}) (maximum . {FIXNUM_MAX}) (encoding . signed-shift-left-3-or-tag)))\n\
  (symbol . ((minimum-id . 1) (maximum-id . {SYMBOL_ID_MAX}) (scope . image-local-interned)))\n\
- (boxed . ((minimum-handle . 1) (maximum-handle . {BOXED_HANDLE_MAX}) (scope . session-local-runtime-table) (discriminant-location . inside-boxed-object) (kinds-defined-so-far . (string game-handle rational)) (forgeable-by-wsm . false) (ownership . runtime-owned-table) (tag-space-remaining . 0)))\n\
+ (boxed . ((minimum-handle . 1) (maximum-handle . {BOXED_HANDLE_MAX}) (scope . session-local-runtime-table) (discriminant-location . inside-boxed-object) (kinds-defined-so-far . (string game-handle rational sid8)) (forgeable-by-wsm . false) (ownership . runtime-owned-table) (tag-space-remaining . 0)))\n\
+ (sid8 . ((boxed-kind . {}) (bits . {SID8_BITS}) (minimum . 0) (maximum . 255) (identity . exact-bare-8-bit)))\n\
  (cons . ((bytes . {CONS_BYTES}) (alignment . {CONS_ALIGNMENT}) (car-offset . {CONS_CAR_OFFSET}) (cdr-offset . {CONS_CDR_OFFSET}) (zero-pointer . invalid) (ownership . bounded-runtime-heap)))\n\
  (closure . ((bytes . {CLOSURE_BYTES}) (alignment . {CLOSURE_ALIGNMENT}) (definition-id-offset . {CLOSURE_DEFINITION_ID_OFFSET}) (environment-ref-offset . {CLOSURE_ENVIRONMENT_REF_OFFSET}) (definition-scope . image-local) (ownership . bounded-runtime-closure-arena)))\n\
  (capability . ((minimum-id . 1) (maximum-id . {CAPABILITY_ID_MAX}) (scope . boot-provisioned) (forgeable-by-wsm . false) (privileged-use . runtime-validated)))\n\
