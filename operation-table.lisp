@@ -4,7 +4,7 @@
  (schema . "wsm-target-operation-table-v1")
  (version . 1)
  (target-contract . ((schema . "wsm-os-target-v1") (version . 6)))
- (semantic-authority . ((repository . "juv4uk/my-lisp")
+ (semantic-authority . ((repository . "juv4uk/sens")
                         (commit . "e206294301e5c98b1b4d3cd536989faee4205b59")
                         (path . "lib/surface/semantic-registry.lisp")))
  (operations .

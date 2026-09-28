@@ -11,7 +11,7 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
 git -C "$TMP" init -q
-git -C "$TMP" remote add origin https://github.com/juv4uk/my-lisp.git
+git -C "$TMP" remote add origin https://github.com/juv4uk/sens.git
 git -C "$TMP" fetch -q --depth 1 origin "$PIN"
 git -C "$TMP" checkout -q FETCH_HEAD
 
