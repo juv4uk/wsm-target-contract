@@ -5,8 +5,8 @@ const CONTRACT: &str = include_str!("../../target-contract.lisp");
 #[test]
 fn rational_is_ratified_as_an_existing_boxed_kind_without_new_wire_tag() {
     assert!(
-        CONTRACT.contains("(kinds-defined-so-far . (string game-handle rational))"),
-        "#11 requires rational to be a ratified discriminant inside the existing Boxed runtime object"
+        CONTRACT.contains("(kinds-defined-so-far . (string game-handle rational sid8))"),
+        "#11 rational must remain ratified when new boxed kinds are appended"
     );
 
     assert_eq!(

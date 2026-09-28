@@ -7,7 +7,7 @@
 //! `my_lisp::layout::NanBox`.
 
 pub const CONTRACT_SCHEMA: &str = "wsm-os-target-v1";
-pub const CONTRACT_VERSION: u16 = 6;
+pub const CONTRACT_VERSION: u16 = 7;
 pub const ARCHITECTURE: &str = "x86_64";
 pub const ENDIANNESS: &str = "little";
 pub const WORD_BITS: u8 = 64;
@@ -56,7 +56,8 @@ pub enum Tag {
     /// Opaque handle into a runtime-owned, session-local boxed-value table.
     /// The tagged word carries only a non-zero handle id; the concrete kind
     /// (String; an opaque game-engine object reference ratified in issue #2;
-    /// and an exact Rational value ratified in issue #11) is a discriminant
+    /// an exact Rational value ratified in issue #11; and an exact SID8
+    /// bootstrap transport value ratified in issue #28) is a discriminant
     /// stored *inside* the boxed object the handle refers to, not in these
     /// bits. Vector/NumericBuffer remain reserved for later.
     ///
@@ -78,6 +79,40 @@ pub const FIXNUM_MAX: i64 = (1_i64 << (PAYLOAD_BITS - 1)) - 1;
 pub const SYMBOL_ID_MAX: Word = (1_u64 << PAYLOAD_BITS) - 1;
 pub const CAPABILITY_ID_MAX: Word = (1_u64 << PAYLOAD_BITS) - 1;
 pub const BOXED_HANDLE_MAX: Word = (1_u64 << PAYLOAD_BITS) - 1;
+pub const SID8_BITS: u8 = 8;
+
+#[repr(u8)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BoxedKind {
+    String = 1,
+    GameHandle = 2,
+    Rational = 3,
+    /// Exact resolved function identity. The payload is the original u8;
+    /// surface names and numeric aliases are not part of this representation.
+    Sid8 = 4,
+}
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct BoxedSid8 {
+    pub kind: BoxedKind,
+    pub bits: u8,
+}
+
+impl BoxedSid8 {
+    #[inline(always)]
+    pub const fn new(bits: u8) -> Self {
+        Self {
+            kind: BoxedKind::Sid8,
+            bits,
+        }
+    }
+
+    #[inline(always)]
+    pub const fn exact_bits(self) -> u8 {
+        self.bits
+    }
+}
 
 /// Canonical `t` represented as Symbol(SYMBOL_ID_MAX) sentinel.
 pub const CANONICAL_T: Word = (SYMBOL_ID_MAX << TAG_BITS) | Tag::Symbol as Word;
@@ -115,6 +150,8 @@ pub const RUNTIME_IMPORTS: &[&str] = &[
     "wsm_rational_new",
     "wsm_rational_numerator",
     "wsm_rational_denominator",
+    "wsm_sid8_new",
+    "wsm_sid8_bits",
     "wsm_fail",
 ];
 
@@ -430,6 +467,17 @@ mod tests {
     }
 
     #[test]
+    fn sid8_boxed_payload_preserves_all_256_exact_identities() {
+        for raw in 0_u16..=255 {
+            let bits = raw as u8;
+            let value = BoxedSid8::new(bits);
+            assert_eq!(value.kind, BoxedKind::Sid8);
+            assert_eq!(value.exact_bits(), bits);
+        }
+        assert_eq!(core::mem::size_of::<BoxedSid8>(), 2);
+    }
+
+    #[test]
     fn boxed_handles_are_distinct_non_zero_session_local_ids() {
         assert_eq!(encode_boxed(0), None);
         let boxed = encode_boxed(1).unwrap();
@@ -501,7 +549,8 @@ mod tests {
  (immediates . ((nil . {NIL}) (true . {TRUE})))\n\
  (fixnum . ((minimum . {FIXNUM_MIN}) (maximum . {FIXNUM_MAX}) (encoding . signed-shift-left-3-or-tag)))\n\
  (symbol . ((minimum-id . 1) (maximum-id . {SYMBOL_ID_MAX}) (scope . image-local-interned)))\n\
- (boxed . ((minimum-handle . 1) (maximum-handle . {BOXED_HANDLE_MAX}) (scope . session-local-runtime-table) (discriminant-location . inside-boxed-object) (kinds-defined-so-far . (string game-handle rational)) (forgeable-by-wsm . false) (ownership . runtime-owned-table) (tag-space-remaining . 0)))\n\
+ (boxed . ((minimum-handle . 1) (maximum-handle . {BOXED_HANDLE_MAX}) (scope . session-local-runtime-table) (discriminant-location . inside-boxed-object) (kinds-defined-so-far . (string game-handle rational sid8)) (forgeable-by-wsm . false) (ownership . runtime-owned-table) (tag-space-remaining . 0)))\n\
+ (sid8 . ((boxed-kind . {}) (bits . {SID8_BITS}) (minimum . 0) (maximum . 255) (identity . exact-bare-8-bit)))\n\
  (cons . ((bytes . {CONS_BYTES}) (alignment . {CONS_ALIGNMENT}) (car-offset . {CONS_CAR_OFFSET}) (cdr-offset . {CONS_CDR_OFFSET}) (zero-pointer . invalid) (ownership . bounded-runtime-heap)))\n\
  (closure . ((bytes . {CLOSURE_BYTES}) (alignment . {CLOSURE_ALIGNMENT}) (definition-id-offset . {CLOSURE_DEFINITION_ID_OFFSET}) (environment-ref-offset . {CLOSURE_ENVIRONMENT_REF_OFFSET}) (definition-scope . image-local) (ownership . bounded-runtime-closure-arena)))\n\
  (capability . ((minimum-id . 1) (maximum-id . {CAPABILITY_ID_MAX}) (scope . boot-provisioned) (forgeable-by-wsm . false) (privileged-use . runtime-validated)))\n\
@@ -519,6 +568,7 @@ mod tests {
             Tag::Closure as u8,
             Tag::Capability as u8,
             Tag::Boxed as u8,
+            BoxedKind::Sid8 as u8,
             ErrorCode::OutOfMemory as u32,
             ErrorCode::Type as u32,
             ErrorCode::InvalidSymbol as u32,
