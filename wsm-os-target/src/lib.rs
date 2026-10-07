@@ -187,8 +187,8 @@ pub const RUNTIME_IMPORTS: &[&str] = &[
     "wsm_rational_denominator",
     "wsm_sid8_new",
     "wsm_sid8_bits",
-    "wsm_predicate_bit_no",
-    "wsm_predicate_bit_yes",
+    "wsm_predicate_bit_0",
+    "wsm_predicate_bit_1",
     "wsm_predicate_bit_bits",
     "wsm_fail",
 ];
@@ -517,12 +517,12 @@ mod tests {
 
     #[test]
     fn predicate_bit_boxed_payload_is_exactly_one_bit_and_not_sid8() {
-        let no = BoxedPredicateBit::new(0).expect("bit 0 is representable");
-        let yes = BoxedPredicateBit::new(1).expect("bit 1 is representable");
-        assert_eq!(no.kind, BoxedKind::PredicateBit);
-        assert_eq!(yes.kind, BoxedKind::PredicateBit);
-        assert_eq!(no.exact_bit(), 0);
-        assert_eq!(yes.exact_bit(), 1);
+        let bit0 = BoxedPredicateBit::new(0).expect("bit 0 is representable");
+        let bit1 = BoxedPredicateBit::new(1).expect("bit 1 is representable");
+        assert_eq!(bit0.kind, BoxedKind::PredicateBit);
+        assert_eq!(bit1.kind, BoxedKind::PredicateBit);
+        assert_eq!(bit0.exact_bit(), 0);
+        assert_eq!(bit1.exact_bit(), 1);
         assert_eq!(BoxedPredicateBit::new(2), None);
         assert_ne!(BoxedKind::PredicateBit as u8, BoxedKind::Sid8 as u8);
         assert_eq!(core::mem::size_of::<BoxedPredicateBit>(), 2);
@@ -536,8 +536,8 @@ mod tests {
         assert!(projection.contains("(nil-alias . false)"));
         assert!(projection.contains("(fixnum-alias . false)"));
         for import in [
-            "wsm_predicate_bit_no",
-            "wsm_predicate_bit_yes",
+            "wsm_predicate_bit_0",
+            "wsm_predicate_bit_1",
             "wsm_predicate_bit_bits",
         ] {
             assert!(RUNTIME_IMPORTS.contains(&import));
