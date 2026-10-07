@@ -1,12 +1,17 @@
-use wsm_os_target::{Tag, decode_boxed, encode_boxed};
+use wsm_os_target::{BoxedKind, Tag, decode_boxed, encode_boxed};
 
 const CONTRACT: &str = include_str!("../../target-contract.lisp");
 
 #[test]
 fn rational_is_ratified_as_an_existing_boxed_kind_without_new_wire_tag() {
     assert!(
-        CONTRACT.contains("(kinds-defined-so-far . (string game-handle rational sid8))"),
-        "#11 rational must remain ratified when new boxed kinds are appended"
+        CONTRACT.contains("(kinds-defined-so-far . (string game-handle rational"),
+        "#11 rational must remain present when later boxed kinds are appended"
+    );
+    assert_eq!(
+        BoxedKind::Rational as u8,
+        3,
+        "#11 rational discriminant must remain stable when later boxed kinds are appended"
     );
 
     assert_eq!(
