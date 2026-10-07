@@ -7,7 +7,7 @@
 //! `my_lisp::layout::NanBox`.
 
 pub const CONTRACT_SCHEMA: &str = "wsm-os-target-v1";
-pub const CONTRACT_VERSION: u16 = 8;
+pub const CONTRACT_VERSION: u16 = 9;
 pub const ARCHITECTURE: &str = "x86_64";
 pub const ENDIANNESS: &str = "little";
 pub const WORD_BITS: u8 = 64;
@@ -190,6 +190,8 @@ pub const RUNTIME_IMPORTS: &[&str] = &[
     "wsm_predicate_bit_0",
     "wsm_predicate_bit_1",
     "wsm_predicate_bit_bits",
+    "wsm_atom_predicate_bit",
+    "wsm_eq_predicate_bit",
     "wsm_fail",
 ];
 
@@ -545,6 +547,22 @@ mod tests {
     }
 
     #[test]
+    fn current_predicate_operations_are_distinct_from_historical_truth_abi() {
+        for import in ["wsm_atom_predicate_bit", "wsm_eq_predicate_bit"] {
+            assert!(RUNTIME_IMPORTS.contains(&import));
+        }
+        assert!(RUNTIME_IMPORTS.contains(&"wsm_atom"));
+        assert!(RUNTIME_IMPORTS.contains(&"wsm_eq"));
+
+        let projection = render_contract();
+        assert!(projection.contains(
+            "(current-predicate-operations . ((atom-import . wsm_atom_predicate_bit) (eq-import . wsm_eq_predicate_bit) (result-carrier . predicate-bit) (semantics . external)))"
+        ));
+        assert!(!projection.contains("(no ."));
+        assert!(!projection.contains("(yes ."));
+    }
+
+    #[test]
     fn boxed_handles_are_distinct_non_zero_session_local_ids() {
         assert_eq!(encode_boxed(0), None);
         let boxed = encode_boxed(1).unwrap();
@@ -619,6 +637,7 @@ mod tests {
  (boxed . ((minimum-handle . 1) (maximum-handle . {BOXED_HANDLE_MAX}) (scope . session-local-runtime-table) (discriminant-location . inside-boxed-object) (kinds-defined-so-far . (string game-handle rational sid8 predicate-bit)) (forgeable-by-wsm . false) (ownership . runtime-owned-table) (tag-space-remaining . 0)))\n\
  (sid8 . ((boxed-kind . {}) (bits . {SID8_BITS}) (minimum . 0) (maximum . 255) (identity . exact-bare-8-bit)))\n\
  (predicate-bit . ((boxed-kind . {}) (bits . {PREDICATE_BIT_BITS}) (allowed . (0 1)) (word-tag . boxed) (canonicalization . runtime-context-singletons) (word-identity . stable-within-runtime-context) (legacy-true-alias . false) (nil-alias . false) (fixnum-alias . false) (semantics . external)))\n\
+ (current-predicate-operations . ((atom-import . wsm_atom_predicate_bit) (eq-import . wsm_eq_predicate_bit) (result-carrier . predicate-bit) (semantics . external)))\n\
  (cons . ((bytes . {CONS_BYTES}) (alignment . {CONS_ALIGNMENT}) (car-offset . {CONS_CAR_OFFSET}) (cdr-offset . {CONS_CDR_OFFSET}) (zero-pointer . invalid) (ownership . bounded-runtime-heap)))\n\
  (closure . ((bytes . {CLOSURE_BYTES}) (alignment . {CLOSURE_ALIGNMENT}) (definition-id-offset . {CLOSURE_DEFINITION_ID_OFFSET}) (environment-ref-offset . {CLOSURE_ENVIRONMENT_REF_OFFSET}) (definition-scope . image-local) (ownership . bounded-runtime-closure-arena)))\n\
  (capability . ((minimum-id . 1) (maximum-id . {CAPABILITY_ID_MAX}) (scope . boot-provisioned) (forgeable-by-wsm . false) (privileged-use . runtime-validated)))\n\
