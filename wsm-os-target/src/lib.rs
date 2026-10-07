@@ -7,7 +7,7 @@
 //! `my_lisp::layout::NanBox`.
 
 pub const CONTRACT_SCHEMA: &str = "wsm-os-target-v1";
-pub const CONTRACT_VERSION: u16 = 7;
+pub const CONTRACT_VERSION: u16 = 8;
 pub const ARCHITECTURE: &str = "x86_64";
 pub const ENDIANNESS: &str = "little";
 pub const WORD_BITS: u8 = 64;
@@ -80,6 +80,7 @@ pub const SYMBOL_ID_MAX: Word = (1_u64 << PAYLOAD_BITS) - 1;
 pub const CAPABILITY_ID_MAX: Word = (1_u64 << PAYLOAD_BITS) - 1;
 pub const BOXED_HANDLE_MAX: Word = (1_u64 << PAYLOAD_BITS) - 1;
 pub const SID8_BITS: u8 = 8;
+pub const PREDICATE_BIT_BITS: u8 = 1;
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -90,6 +91,14 @@ pub enum BoxedKind {
     /// Exact resolved function identity. The payload is the original u8;
     /// surface names and numeric aliases are not part of this representation.
     Sid8 = 4,
+    /// Representation-only carrier for an exact one-bit predicate result.
+    ///
+    /// The runtime owns two canonical singleton boxed objects per runtime
+    /// context (bit 0 and bit 1). The target contract does not assign their
+    /// language meaning; SENS owns that semantic law. Keeping the carrier
+    /// boxed avoids aliasing either bit with NIL, Fixnum 0/1, Symbol(t), or
+    /// the retired Tag::True representation.
+    PredicateBit = 5,
 }
 
 #[repr(C)]
@@ -111,6 +120,32 @@ impl BoxedSid8 {
     #[inline(always)]
     pub const fn exact_bits(self) -> u8 {
         self.bits
+    }
+}
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct BoxedPredicateBit {
+    pub kind: BoxedKind,
+    pub bit: u8,
+}
+
+impl BoxedPredicateBit {
+    #[inline(always)]
+    pub const fn new(bit: u8) -> Option<Self> {
+        if bit <= 1 {
+            Some(Self {
+                kind: BoxedKind::PredicateBit,
+                bit,
+            })
+        } else {
+            None
+        }
+    }
+
+    #[inline(always)]
+    pub const fn exact_bit(self) -> u8 {
+        self.bit
     }
 }
 
@@ -152,6 +187,9 @@ pub const RUNTIME_IMPORTS: &[&str] = &[
     "wsm_rational_denominator",
     "wsm_sid8_new",
     "wsm_sid8_bits",
+    "wsm_predicate_bit_0",
+    "wsm_predicate_bit_1",
+    "wsm_predicate_bit_bits",
     "wsm_fail",
 ];
 
@@ -478,6 +516,35 @@ mod tests {
     }
 
     #[test]
+    fn predicate_bit_boxed_payload_is_exactly_one_bit_and_not_sid8() {
+        let bit0 = BoxedPredicateBit::new(0).expect("bit 0 is representable");
+        let bit1 = BoxedPredicateBit::new(1).expect("bit 1 is representable");
+        assert_eq!(bit0.kind, BoxedKind::PredicateBit);
+        assert_eq!(bit1.kind, BoxedKind::PredicateBit);
+        assert_eq!(bit0.exact_bit(), 0);
+        assert_eq!(bit1.exact_bit(), 1);
+        assert_eq!(BoxedPredicateBit::new(2), None);
+        assert_ne!(BoxedKind::PredicateBit as u8, BoxedKind::Sid8 as u8);
+        assert_eq!(core::mem::size_of::<BoxedPredicateBit>(), 2);
+    }
+
+    #[test]
+    fn predicate_bit_projection_requires_context_singletons_without_truth_aliases() {
+        let projection = render_contract();
+        assert!(projection.contains("(canonicalization . runtime-context-singletons)"));
+        assert!(projection.contains("(legacy-true-alias . false)"));
+        assert!(projection.contains("(nil-alias . false)"));
+        assert!(projection.contains("(fixnum-alias . false)"));
+        for import in [
+            "wsm_predicate_bit_0",
+            "wsm_predicate_bit_1",
+            "wsm_predicate_bit_bits",
+        ] {
+            assert!(RUNTIME_IMPORTS.contains(&import));
+        }
+    }
+
+    #[test]
     fn boxed_handles_are_distinct_non_zero_session_local_ids() {
         assert_eq!(encode_boxed(0), None);
         let boxed = encode_boxed(1).unwrap();
@@ -549,8 +616,9 @@ mod tests {
  (immediates . ((nil . {NIL}) (true . {TRUE})))\n\
  (fixnum . ((minimum . {FIXNUM_MIN}) (maximum . {FIXNUM_MAX}) (encoding . signed-shift-left-3-or-tag)))\n\
  (symbol . ((minimum-id . 1) (maximum-id . {SYMBOL_ID_MAX}) (scope . image-local-interned)))\n\
- (boxed . ((minimum-handle . 1) (maximum-handle . {BOXED_HANDLE_MAX}) (scope . session-local-runtime-table) (discriminant-location . inside-boxed-object) (kinds-defined-so-far . (string game-handle rational sid8)) (forgeable-by-wsm . false) (ownership . runtime-owned-table) (tag-space-remaining . 0)))\n\
+ (boxed . ((minimum-handle . 1) (maximum-handle . {BOXED_HANDLE_MAX}) (scope . session-local-runtime-table) (discriminant-location . inside-boxed-object) (kinds-defined-so-far . (string game-handle rational sid8 predicate-bit)) (forgeable-by-wsm . false) (ownership . runtime-owned-table) (tag-space-remaining . 0)))\n\
  (sid8 . ((boxed-kind . {}) (bits . {SID8_BITS}) (minimum . 0) (maximum . 255) (identity . exact-bare-8-bit)))\n\
+ (predicate-bit . ((boxed-kind . {}) (bits . {PREDICATE_BIT_BITS}) (allowed . (0 1)) (word-tag . boxed) (canonicalization . runtime-context-singletons) (word-identity . stable-within-runtime-context) (legacy-true-alias . false) (nil-alias . false) (fixnum-alias . false) (semantics . external)))\n\
  (cons . ((bytes . {CONS_BYTES}) (alignment . {CONS_ALIGNMENT}) (car-offset . {CONS_CAR_OFFSET}) (cdr-offset . {CONS_CDR_OFFSET}) (zero-pointer . invalid) (ownership . bounded-runtime-heap)))\n\
  (closure . ((bytes . {CLOSURE_BYTES}) (alignment . {CLOSURE_ALIGNMENT}) (definition-id-offset . {CLOSURE_DEFINITION_ID_OFFSET}) (environment-ref-offset . {CLOSURE_ENVIRONMENT_REF_OFFSET}) (definition-scope . image-local) (ownership . bounded-runtime-closure-arena)))\n\
  (capability . ((minimum-id . 1) (maximum-id . {CAPABILITY_ID_MAX}) (scope . boot-provisioned) (forgeable-by-wsm . false) (privileged-use . runtime-validated)))\n\
@@ -569,6 +637,7 @@ mod tests {
             Tag::Capability as u8,
             Tag::Boxed as u8,
             BoxedKind::Sid8 as u8,
+            BoxedKind::PredicateBit as u8,
             ErrorCode::OutOfMemory as u32,
             ErrorCode::Type as u32,
             ErrorCode::InvalidSymbol as u32,
